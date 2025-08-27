@@ -1,12 +1,15 @@
 import logging
 from parser.items import QuestionAnswerItem
+from scrapy_redis.spiders import RedisSpider
 import scrapy
 
 
-class KreuzwortSpider(scrapy.Spider):
+class KreuzwortSpider(RedisSpider):
     name = "kreuzwort"
     allowed_domains = ["kreuzwort-raetsel.net"]
-    start_urls = ["https://www.kreuzwort-raetsel.net/uebersicht.html"]
+    redis_key = 'kreuzwort:start_urls'
+
+    max_idle_time = 7
 
     def parse(self, response):
         letter_links = response.css('ul.dnrg li a::attr(href)').getall()
