@@ -8,14 +8,15 @@
 
 ## Installation
 
-### 1. Virtual
+### 1. Virtual Environment
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-2. Install Dependencies
+### 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
