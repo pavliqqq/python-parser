@@ -19,25 +19,45 @@ NEWSPIDER_MODULE = "parser.spiders"
 
 ADDONS = {}
 
-
-
 load_dotenv()
 
 log_mode = os.getenv("LOG_CHANNEL")
 
 LOG_FILE = 'logger.log' if log_mode == 'file' else None
-LOG_FILE_APPEND = False
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = "parser (+http://www.yourdomain.com)"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
+
 
 # Concurrency and throttling settings
-#CONCURRENT_REQUESTS = 16
-CONCURRENT_REQUESTS_PER_DOMAIN = 1
-DOWNLOAD_DELAY = 1
+CONCURRENT_REQUESTS = os.getenv("CONCURRENT_REQUESTS")
+CONCURRENT_REQUESTS_PER_DOMAIN = CONCURRENT_REQUESTS
+DOWNLOAD_DELAY = 0.5
+
+
+# Redis settings
+# Enables scheduling storing requests queue in redis.
+SCHEDULER = "scrapy_redis.scheduler.Scheduler"
+SCHEDULER_PERSIST = True
+
+# Ensure all spiders share same duplicates filter through redis.
+DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+
+SCHEDULER_QUEUE_CLASS = 'scrapy_redis.queue.FifoQueue'
+
+REDIS_SCHEME = os.getenv("REDIS_SCHEME")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_DATABASE = os.getenv("REDIS_DATABASE")
+
+if REDIS_PASSWORD:
+    REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DATABASE}"
+else:
+    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DATABASE}"
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
