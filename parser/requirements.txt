@@ -26,9 +26,11 @@ PyDispatcher==2.0.7
 pyOpenSSL==25.1.0
 python-dotenv==1.1.1
 queuelib==1.8.0
+redis==6.4.0
 requests==2.32.5
 requests-file==2.1.0
 Scrapy==2.13.3
+scrapy-redis==0.9.1
 scrapy-rotating-proxies==0.6.2
 service-identity==24.2.0
 setuptools==80.9.0
