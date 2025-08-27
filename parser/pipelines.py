@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 
 import mysql.connector
+import time
 
 
 # useful for handling different item types with a single interface
@@ -21,65 +22,71 @@ class ParserPipeline:
             password = os.getenv('DB_PASSWORD')
         )
 
+        self.qa_table = 'question_answer'
+        self.answers_table = 'answers'
+        self.question_table = 'questions'
+
     def process_item(self, item, spider):
         try:
             rows = item['data_rows']
+
+            columns = list(rows[0].keys())
+            questionColumn = columns[0]
+            answerColumn = columns[1]
+
             inserted_count = 0
-        
-            for row in rows:
-                question_text = row['question']
-                answer_text = row['answer']
+            
+            with self.conn.cursor() as cursor:
+                for row in rows:
+                    question_text = row[questionColumn]
+                    answer_text = row[answerColumn]
 
-                question_id = self.get_id('questions', 'question', question_text)
-                answer_id = self.get_id('answers', 'answer', answer_text)
+                    question_id = self.get_id(cursor, self.question_table, questionColumn, question_text)
+                    answer_id = self.get_id(cursor, self.answers_table, answerColumn, answer_text)
 
-                data = {
-                    'question_id': question_id,
-                    'answer_id': answer_id,
-                }
+                    data = {
+                        'question_id': question_id,
+                        'answer_id': answer_id,
+                    }
 
-                inserted_count += self.link_question_to_answer(data)
+                    inserted_count += self.link_question_to_answer(cursor, data)
 
-            self.conn.commit()
+                self.conn.commit()
             logging.info("Insert data: expected: %s, inserted: %s", len(rows), inserted_count)
         except Exception as e:
             self.conn.rollback()
             logging.error("Insert data error: %s", e)
             raise
 
-    def get_id(self, table, column, value):
-        with self.conn.cursor() as cursor:
-            query = f"SELECT id FROM {table} WHERE {column} = %s"
-            cursor.execute(query, (value,))
-            row = cursor.fetchone()
+    def get_id(self, cursor, table, column, value):
+        query = f"SELECT id FROM {table} WHERE {column} = %s"
+        cursor.execute(query, (value,))
+        row = cursor.fetchone()
 
-            if row is None:
-                return self.insert_data(table, column, value)
+        if row is None:
+                return self.insert_data(cursor, table, column, value)
             
-            return row[0]
-        
-    def insert_data(self, table, column, value):
-        with self.conn.cursor() as cursor:
-            query = f"INSERT INTO {table} ({column}) VALUES (%s)"
-            cursor.execute(query, (value,))
-
-            return cursor.lastrowid
+        return row[0]
     
+    def insert_data(self, cursor, table, column, value):
+        query = f"INSERT INTO {table} ({column}) VALUES (%s)"
+        cursor.execute(query, (value,))
 
-    def link_question_to_answer(self, data):
-        with self.conn.cursor() as cursor:
-            columns = list(data.keys())
-            placeholders = ", ".join(["%s"] * len(columns))
-            query = f"""
-                INSERT IGNORE INTO question_answer
-                ({", ".join(columns)})
-                VALUES ({placeholders})
-            """
+        return cursor.lastrowid
 
-            values = list(data.values())
-            cursor.execute(query, values)
+    def link_question_to_answer(self, cursor, data):
+        columns = list(data.keys())
+        placeholders = ", ".join(["%s"] * len(columns))
+        query = f"""
+            INSERT IGNORE INTO {self.qa_table}
+            ({", ".join(columns)})
+            VALUES ({placeholders})
+        """
 
-            return cursor.rowcount
+        values = list(data.values())
+        cursor.execute(query, values)
+
+        return cursor.rowcount
 
     def close_spider(self, spider):
         self.conn.close()
