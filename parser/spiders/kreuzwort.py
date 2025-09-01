@@ -32,7 +32,9 @@ class KreuzwortSpider(RedisSpider):
                     'question': question,
                     'answer': answer
                 })
-                
-        yield QuestionAnswerItem(
-            data_rows = result
-        )
+        if result:        
+            yield QuestionAnswerItem(
+                data_rows = result
+            )
+        else:
+            logging.warning("No data to be parsed from page: %s", response.url)
